@@ -1,0 +1,17 @@
+**bower_components**
+**.idea**
+node_modules
+**/dist*/**
+**/coverage*/**
+**/dist-bower*/**
+.DS_Store
+.sass-cache
+*.log
+*tmp*
+**sublime-project**
+**sublime-workspace**
+yarn**
+coverage/**
+docker-context/ui/**
+.vscode
+/test-report.xml
