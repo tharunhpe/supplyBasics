@@ -31,3 +31,26 @@ export const DEFAULT_QUERY = {
   },
 };
 
+export const filter = [
+  {
+    type: 'category',
+    options: [
+       { name: 'Cutting Tools' },
+       { name: 'Hand Tools' },
+       { name: 'Rotors' },
+       { name: 'Motors' },
+       { name: 'Grease' },
+    ],
+  },
+  {
+    type: 'brand',
+    options: [
+       { name: 'Addison' },
+       { name: 'Taparia' },
+       { name: 'Maruthi' },
+       { name: 'Hanuman' },
+       { name: 'Hyundai' },
+       { name: 'Zumbi' },
+    ],
+  },
+];

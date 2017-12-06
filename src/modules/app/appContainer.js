@@ -10,14 +10,16 @@ import Sidebar from 'grommet/components/Sidebar';
 import Header from 'grommet/components/Header';
 import Title from 'grommet/components/Title';
 import Split from 'grommet/components/Split';
-import Footer from 'grommet/components/Footer';
 import Tile from 'grommet/components/Tile';
 import Tiles from 'grommet/components/Tiles';
 import Heading from 'grommet/components/Heading';
 import Animate from 'grommet/components/Animate';
 import Search from 'grommet/components/Search';
+import Label from 'grommet/components/Label';
+import CheckBox from 'grommet/components/CheckBox';
 import {
   DEBOUNCE_SEARCH_TIME,
+  FILTER_SQL_OPERATORS,
 } from 'utils/constants';
 import {
   getApp,
@@ -30,6 +32,7 @@ import {
 } from './appStore';
 import {
   DEFAULT_QUERY,
+  filter,
 } from './constants';
 
 
@@ -38,6 +41,10 @@ const propTypes = {
     start: PropTypes.number,
     count: PropTypes.number,
     query: PropTypes.oneOfType([
+      PropTypes.object,
+      PropTypes.array,
+    ]),
+    filters: PropTypes.oneOfType([
       PropTypes.object,
       PropTypes.array,
     ]),
@@ -80,6 +87,7 @@ class appContainer extends Component {
     this.getApp = this.getApp.bind(this);
     this.loadNextApp = this.loadNextApp.bind(this);
     this.onSearch = this.onSearch.bind(this);
+    this.onFilter = this.onFilter.bind(this);
     this.state = {
       searchString: '',
     };
@@ -106,15 +114,61 @@ class appContainer extends Component {
       const appQueryParams = {
         ...requestParams,
         start: 0,
-        count: 20,
+        count: 6,
         search: {
           value: this.state.searchString,
+          searchBy: 'name',
+          queryOperator: 'query',
         },
       };
 
       dispatchSetParams(appQueryParams);
       dispatchGetApp();
     }, DEBOUNCE_SEARCH_TIME);
+  }
+
+  onFilter(type, value, bool) {
+    const {
+      requestParams,
+      dispatchSetParams,
+      dispatchGetApp,
+    } = this.props;
+    console.log(requestParams);
+    const categoryValues = requestParams.filters.category.values;
+    const brandValues = requestParams.filters.brand.values;
+    if (type === 'category' && !bool) {
+      categoryValues.push(value);
+    } else if (type === 'category' && bool) {
+      const index = categoryValues.indexOf(value);    // <-- Not supported in <IE9
+      if (index !== -1) {
+        categoryValues.splice(index, 1);
+      }
+    }
+    if (type === 'brand' && !bool) {
+      brandValues.push(value);
+    } else if (type === 'brand' && bool) {
+      const index = brandValues.indexOf(value);    // <-- Not supported in <IE9
+      if (index !== -1) {
+        brandValues.splice(index, 1);
+      }
+    }
+    const appQueryParams = {
+      ...requestParams,
+      start: 0,
+      count: 6,
+      filters: {
+        category: {
+          values: categoryValues,
+          sqlOperator: FILTER_SQL_OPERATORS.EQ,
+        },
+        brand: {
+          values: brandValues,
+          sqlOperator: FILTER_SQL_OPERATORS.EQ,
+        },
+      },
+    };
+    dispatchSetParams(appQueryParams);
+    dispatchGetApp();
   }
 
   getApp() {
@@ -126,13 +180,38 @@ class appContainer extends Component {
   loadNextApp() {
     const params = Object.assign({}, this.props.requestParams);
     params.start = this.props.app.start + params.count;
-    this.props.dispatchGetNext(params);
+    if (params.start < this.props.app.total) {
+      this.props.dispatchGetNext(params);
+    }
+    return false;
   }
 
   // TODO replace default redirect to default component when more routes are added.
   render() {
     const { app } = this.props;
-     // Get the window location after login redirect to set the token.
+    const getNext =
+      (app.start + app.count) <
+      app.total ? this.loadNextApp : null;
+
+    const filters = (
+      <Box flex="grow" pad="small">
+        {filter.map((items, index) => (
+          <Box flex="grow">
+            <Label uppercase>{items.type}</Label>
+            {items.options.map((item, index2) => (
+              <Box justify="between" flex="grow" align="center" direction="row">
+                <Box>{item.name}</Box>
+                <CheckBox
+                  reverse
+                  checked={this.props.requestParams.filters[items.type].values.indexOf(item.name) !== -1}
+                  onChange={() => this.onFilter(items.type, item.name, this.props.requestParams.filters[items.type].values.indexOf(item.name) !== -1)}
+                />
+              </Box>
+            ))}
+          </Box>
+        ))}
+      </Box>
+    );
     return (
       <Box flex="grow">
         <Box direction="row" align="center" justify="center" pad={{ vertical: 'small' }} separator="bottom">
@@ -150,7 +229,8 @@ class appContainer extends Component {
             placeHolder="Search"
             inline
             fill
-            onDOMChange={() => {}}
+            value={this.state.searchString}
+            onDOMChange={this.onSearch}
           />
           <Button
             className="mainCart"
@@ -179,25 +259,32 @@ class appContainer extends Component {
                 Clear
               </Button>
             </Header>
+            {filters}
           </Sidebar>
-          <Box pad="medium" full colorIndex="light-2">
-            <Box direction="row" align="center">
-              <Box separator="right" pad={{ horizontal: 'small' }}>
-                <Heading margin="none" tag="h2" strong>Devices</Heading>
+          <Box colorIndex="light-1" className="listWrapper">
+            <Header fixed margin="none">
+              <Box direction="row" align="center">
+                <Box separator="right" pad={{ horizontal: 'small' }}>
+                  <Heading margin="none" tag="h2" strong>Devices</Heading>
+                </Box>
+                <Box pad={{ horizontal: 'small' }}>{app.members.length} of {app.total} Results</Box>
               </Box>
-              <Box pad={{ horizontal: 'small' }}>{app.members.length} of 1000 Results</Box>
-            </Box>
-            <Tiles flush={false} onMore={this.loadNextApp}>
+            </Header>
+            <Tiles flush={false} onMore={getNext}>
               {app.members.map((item, index) => (
-                <Tile size="medium" colorIndex="light-1" id="tile">
+                <Tile size="small" colorIndex="light-1" id="tile">
                   <Animate enter={{ animation: 'slide-up', duration: 1000, delay: 0 }}>
                     <Box flex="grow" pad="small" size="medium">
-                      <Box pad={{ vertical: 'medium' }} separator="bottom" flex="grow" align="center"><Box size="small" className="emptyBox" colorIndex="unknown" /></Box>
+                      <Box pad={{ vertical: 'medium' }} separator="bottom" flex="grow" align="center"><Box size="small" className="emptyBox" colorIndex="unknown" align="end"><Box className="offerBox" colorIndex="unknown">25%</Box></Box></Box>
                       <Box pad={{ vertical: 'small' }} flex="grow">
-                        <Box><strong>{item.name}</strong></Box>
+                        <Box className="itemName"><strong>{item.name}</strong></Box>
                       </Box>
                     </Box>
-                    <Footer justify="between" colorIndex="light-2" />
+                    <Box pad={{ horizontal: 'small' }}>Seller</Box>
+                    <Box align="center" direction="row" pad={{ horizontal: 'small', vertical: 'small' }}>
+                      <Box className="cost">&#x20b9; 500</Box>
+                      <Box className="discount" pad={{ horizontal: 'medium' }}>800</Box>
+                    </Box>
                   </Animate>
                 </Tile>
               ))}

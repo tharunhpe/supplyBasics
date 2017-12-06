@@ -625,10 +625,38 @@ export async function getApp(queryString, queryParams, handler) {
   }
 ];
 
-    const filteredItems = items.filter(
+    let filteredItems = items.filter(
       (item) => (String(item[queryParams.search.searchBy])
         .indexOf(String(queryParams.search.value)) !== -1));
 
+
+  let filteredItems2 = [];
+  let filteredItems3 = [];
+
+  console.log(queryParams.filters.category.values.length);
+
+  if(queryParams.filters.category.values.length > 0) {
+    for (let i=0; i<queryParams.filters.category.values.length; i++) {
+        console.log(filteredItems2);
+        filteredItems2 = filteredItems.filter(
+          (item) => (String(item['category'])
+            .indexOf(String(queryParams.filters.category.values[i])) !== -1));
+        filteredItems3.push.apply(filteredItems3, filteredItems2)
+        console.log('After', filteredItems3);
+    }
+    filteredItems = filteredItems3;
+  }
+  filteredItems2 = [];
+  filteredItems3 = [];
+  if(queryParams.filters.brand.values.length > 0) {
+    for (let j=0; j<queryParams.filters.brand.values.length; j++) {
+        filteredItems2 = filteredItems.filter(
+          (item) => (String(item['brand'])
+            .indexOf(String(queryParams.filters.brand.values[j])) !== -1));
+        filteredItems3.push.apply(filteredItems3, filteredItems2)
+    }
+    filteredItems = filteredItems3;
+  }
     const res = {
       body: {
         start: queryParams.start,
@@ -645,7 +673,7 @@ export async function getApp(queryString, queryParams, handler) {
   }
 }
 
-export async function getAllFilters() {
+export async function getAllFilters(handler) {
   console.log(queryString); //eslint-disable-line
   try {
     const filter = [
