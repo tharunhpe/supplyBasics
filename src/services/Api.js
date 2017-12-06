@@ -633,16 +633,13 @@ export async function getApp(queryString, queryParams, handler) {
   let filteredItems2 = [];
   let filteredItems3 = [];
 
-  console.log(queryParams.filters.category.values.length);
 
   if(queryParams.filters.category.values.length > 0) {
     for (let i=0; i<queryParams.filters.category.values.length; i++) {
-        console.log(filteredItems2);
         filteredItems2 = filteredItems.filter(
           (item) => (String(item['category'])
             .indexOf(String(queryParams.filters.category.values[i])) !== -1));
         filteredItems3.push.apply(filteredItems3, filteredItems2)
-        console.log('After', filteredItems3);
     }
     filteredItems = filteredItems3;
   }

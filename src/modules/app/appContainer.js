@@ -88,6 +88,7 @@ class appContainer extends Component {
     this.loadNextApp = this.loadNextApp.bind(this);
     this.onSearch = this.onSearch.bind(this);
     this.onFilter = this.onFilter.bind(this);
+    this.onClear = this.onClear.bind(this);
     this.state = {
       searchString: '',
     };
@@ -133,7 +134,6 @@ class appContainer extends Component {
       dispatchSetParams,
       dispatchGetApp,
     } = this.props;
-    console.log(requestParams);
     const categoryValues = requestParams.filters.category.values;
     const brandValues = requestParams.filters.brand.values;
     if (type === 'category' && !bool) {
@@ -171,6 +171,12 @@ class appContainer extends Component {
     dispatchGetApp();
   }
 
+  onClear() {
+    const params = JSON.parse(JSON.stringify(DEFAULT_QUERY));
+    this.props.dispatchSetParams(params);
+    this.props.dispatchGetApp();
+  }
+
   getApp() {
     const params = JSON.parse(JSON.stringify(DEFAULT_QUERY));
     this.props.dispatchSetParams(params);
@@ -192,7 +198,6 @@ class appContainer extends Component {
     const getNext =
       (app.start + app.count) <
       app.total ? this.loadNextApp : null;
-
     const filters = (
       <Box flex="grow" pad="small">
         {filter.map((items, index) => (
@@ -203,8 +208,8 @@ class appContainer extends Component {
                 <Box>{item.name}</Box>
                 <CheckBox
                   reverse
-                  checked={this.props.requestParams.filters[items.type].values.indexOf(item.name) !== -1}
-                  onChange={() => this.onFilter(items.type, item.name, this.props.requestParams.filters[items.type].values.indexOf(item.name) !== -1)}
+                  checked={this.props.requestParams.filters[items.type].values.indexOf(item.name) !== -1} //eslint-disable-line
+                  onChange={() => this.onFilter(items.type, item.name, this.props.requestParams.filters[items.type].values.indexOf(item.name) !== -1)} //eslint-disable-line
                 />
               </Box>
             ))}
@@ -254,7 +259,7 @@ class appContainer extends Component {
               <Button
                 className="clearButton"
                 plain
-                onClick={() => {}}
+                onClick={this.onClear}
               >
                 Clear
               </Button>
